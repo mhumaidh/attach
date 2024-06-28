@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attack!</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        #game-container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        #game-track {
+            width: 300px;
+            height: 40px;
+            background-color: #ddd;
+            position: relative;
+            margin: 20px auto;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+        #moving-mark {
+            width: 36px;
+            height: 36px;
+            background-color: blue;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: 0;
+            transition: left 0.1s linear;
+        }
+        #target {
+            width: 36px;
+            height: 36px;
+            border: 2px solid red;
+            border-radius: 50%;
+            position: absolute;
+            top: 0;
+        }
+        button {
+            margin: 5px;
+            padding: 10px 15px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #difficulty-buttons button {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+        }
+        #status {
+            font-size: 18px;
+            margin: 10px 0;
+            font-weight: bold;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <h1>Attack!</h1>
+        <div id="game-track">
+            <div id="moving-mark"></div>
+            <div id="target"></div>
+        </div>
+        <button id="start-stop-btn">Start</button>
+        <button id="reset-btn">Reset</button>
+        <div id="difficulty-buttons">
+            <p>Difficulty Level:</p>
+            <button class="diff-btn" data-level="1">1</button>
+            <button class="diff-btn" data-level="2">2</button>
+            <button class="diff-btn" data-level="3">3</button>
+            <button class="diff-btn" data-level="4">4</button>
+            <button class="diff-btn" data-level="5">5</button>
+            <button class="diff-btn" data-level="6">6</button>
+        </div>
+        <div id="status">Select Difficulty</div>
+    </div>
+
+    <script>
+        const movingMark = document.getElementById('moving-mark');
+        const target = document.getElementById('target');
+        const startStopBtn = document.getElementById('start-stop-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const difficultyBtns = document.querySelectorAll('.diff-btn');
+        const statusDisplay = document.getElementById('status');
+
+        let position = 0;
+        let direction = 1;
+        let isMoving = false;
+        let difficulty = null;
+        let targetPosition = 0;
+        const trackWidth = 300;
+        const markSize = 36;
+        const targetSize = 40;
+        const baseSpeed = 0.75; // Increased by 50% from 0.5 to 0.75
+
+        let animationId;
+
+        function updateMark() {
+            if (isMoving) {
+                position += direction * (baseSpeed + (difficulty - 1) * 0.3); // Increased difficulty scaling
+                if (position <= 0 || position >= trackWidth - markSize) {
+                    direction *= -1;
+                }
+                position = Math.max(0, Math.min(trackWidth - markSize, position));
+                movingMark.style.left = `${position}px`;
+                animationId = requestAnimationFrame(updateMark);
+            }
+        }
+
+        function randomizeTarget() {
+            targetPosition = Math.floor(Math.random() * (trackWidth - targetSize));
+            target.style.left = `${targetPosition}px`;
+        }
+
+        function startGame() {
+            if (difficulty === null) {
+                updateStatus('Select Difficulty');
+                return;
+            }
+            isMoving = true;
+            updateStatus('Running');
+            startStopBtn.textContent = 'Stop';
+            animationId = requestAnimationFrame(updateMark);
+            disableDifficultyButtons(true);
+        }
+
+        function stopGame() {
+            isMoving = false;
+            cancelAnimationFrame(animationId);
+            const distance = Math.abs((position + markSize / 2) - (targetPosition + targetSize / 2));
+            if (distance < targetSize / 2) {
+                updateStatus('Successful');
+            } else {
+                updateStatus('Unsuccessful');
+            }
+            startStopBtn.textContent = 'Start';
+            disableDifficultyButtons(false);
+        }
+
+        function resetGame() {
+            isMoving = false;
+            cancelAnimationFrame(animationId);
+            difficulty = null;
+            position = 0;
+            direction = 1;
+            movingMark.style.left = '0px';
+            randomizeTarget();
+            updateDifficultyDisplay();
+            updateStatus('Select Difficulty');
+            startStopBtn.textContent = 'Start';
+            disableDifficultyButtons(false);
+        }
+
+        function updateStatus(status) {
+            statusDisplay.textContent = status;
+            switch(status) {
+                case 'Select Difficulty':
+                case 'Running':
+                    statusDisplay.style.backgroundColor = '#f0f0f0';
+                    statusDisplay.style.color = 'black';
+                    break;
+                case 'Successful':
+                    statusDisplay.style.backgroundColor = '#d4edda';
+                    statusDisplay.style.color = '#155724';
+                    break;
+                case 'Unsuccessful':
+                    statusDisplay.style.backgroundColor = '#f8d7da';
+                    statusDisplay.style.color = '#721c24';
+                    break;
+            }
+        }
+
+        function updateDifficultyDisplay() {
+            difficultyBtns.forEach(btn => {
+                if (parseInt(btn.dataset.level) === difficulty) {
+                    btn.style.backgroundColor = 'lightblue';
+                } else {
+                    btn.style.backgroundColor = '';
+                }
+            });
+        }
+
+        function disableDifficultyButtons(disable) {
+            difficultyBtns.forEach(btn => {
+                btn.disabled = disable;
+                btn.classList.toggle('disabled', disable);
+            });
+        }
+
+        startStopBtn.addEventListener('click', () => {
+            if (isMoving) {
+                stopGame();
+            } else {
+                startGame();
+            }
+        });
+
+        resetBtn.addEventListener('click', resetGame);
+
+        difficultyBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                difficulty = parseInt(btn.dataset.level);
+                updateDifficultyDisplay();
+                updateStatus('Ready');
+            });
+        });
+
+        // Initialize the game
+        resetGame();
+    </script>
+</body>
+</html>
