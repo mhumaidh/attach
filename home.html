@@ -38,7 +38,6 @@
             position: absolute;
             top: 2px;
             left: 0;
-            transition: left 0.1s linear;
         }
         #target {
             width: 36px;
@@ -110,19 +109,17 @@
         const trackWidth = 300;
         const markSize = 36;
         const targetSize = 40;
-        const baseSpeed = 0.75; // Increased by 50% from 0.5 to 0.75
-
-        let animationId;
+        const baseSpeed = 5; // Significantly increased base speed
 
         function updateMark() {
             if (isMoving) {
-                position += direction * (baseSpeed + (difficulty - 1) * 0.3); // Increased difficulty scaling
+                position += direction * (baseSpeed + (difficulty - 1) * 2); // Increased difficulty scaling
                 if (position <= 0 || position >= trackWidth - markSize) {
                     direction *= -1;
                 }
                 position = Math.max(0, Math.min(trackWidth - markSize, position));
                 movingMark.style.left = `${position}px`;
-                animationId = requestAnimationFrame(updateMark);
+                requestAnimationFrame(updateMark);
             }
         }
 
@@ -139,13 +136,12 @@
             isMoving = true;
             updateStatus('Running');
             startStopBtn.textContent = 'Stop';
-            animationId = requestAnimationFrame(updateMark);
+            requestAnimationFrame(updateMark);
             disableDifficultyButtons(true);
         }
 
         function stopGame() {
             isMoving = false;
-            cancelAnimationFrame(animationId);
             const distance = Math.abs((position + markSize / 2) - (targetPosition + targetSize / 2));
             if (distance < targetSize / 2) {
                 updateStatus('Successful');
@@ -158,7 +154,6 @@
 
         function resetGame() {
             isMoving = false;
-            cancelAnimationFrame(animationId);
             difficulty = null;
             position = 0;
             direction = 1;
