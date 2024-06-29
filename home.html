@@ -54,6 +54,23 @@
             position: absolute;
             top: 0;
         }
+        #precision-bar {
+            width: 100%;
+            height: 30px;
+            background-color: #f0f0f0;
+            margin-top: 10px;
+            position: relative;
+            display: none;
+        }
+        .precision-zone {
+            position: absolute;
+            height: 100%;
+            border-right: 1px solid #999;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
         button {
             margin: 5px;
             padding: 10px 15px;
@@ -125,30 +142,23 @@
             font-size: 24px;
             margin-right: 5px;
         }
-        @media (max-width: 600px) {
-            #game-container {
-                padding: 10px;
-            }
-            #start-stop-btn {
-                font-size: 20px;
-                padding: 10px 20px;
-            }
-        }
     </style>
 </head>
 <body>
     <div id="game-container">
         <h1>Battle for Triton</h1>
         <div id="attack-buttons">
-            <button class="attack-btn" data-attack="Water Cannon" data-difficulty="3" data-damage="5 Lives"><span class="weapon-symbol">💦</span>Water Cannon</button>
-            <button class="attack-btn" data-attack="Water Pistol" data-difficulty="4" data-damage="2 Lives"><span class="weapon-symbol">🔫</span>Water Pistol</button>
-            <button class="attack-btn" data-attack="Laser" data-difficulty="5" data-damage="3 Lives"><span class="weapon-symbol">🔆</span>Laser</button>
-            <button class="attack-btn" data-attack="Tentacle" data-difficulty="6" data-damage="Move 1 Position"><span class="weapon-symbol">🦑</span>Tentacle</button>
+            <button class="attack-btn" data-attack="Water Pistol" data-damage="1" data-range="4"><span class="weapon-symbol">🔫</span>Water Pistol</button>
+            <button class="attack-btn" data-attack="Water Cannon" data-damage="2" data-range="6"><span class="weapon-symbol">💦</span>Water Cannon</button>
+            <button class="attack-btn" data-attack="Laser Beam" data-damage="3" data-range="10"><span class="weapon-symbol">🔆</span>Laser Beam</button>
+            <button class="attack-btn" data-attack="Homing Crow" data-damage="5" data-range="10"><span class="weapon-symbol">🐦</span>Homing Crow</button>
+            <button class="attack-btn" data-attack="Tentacle" data-damage="5" data-range="1"><span class="weapon-symbol">🦑</span>Tentacle</button>
         </div>
         <div id="game-track">
             <div id="moving-mark"></div>
             <div id="target"></div>
         </div>
+        <div id="precision-bar"></div>
         <button id="start-stop-btn">Start</button>
         <button id="reset-btn">Reset</button>
         <div id="status">Select Weapon</div>
@@ -162,6 +172,7 @@
         const attackBtns = document.querySelectorAll('.attack-btn');
         const statusDisplay = document.getElementById('status');
         const gameTrack = document.getElementById('game-track');
+        const precisionBar = document.getElementById('precision-bar');
 
         let position = 0;
         let direction = 1;
@@ -171,11 +182,36 @@
         let trackWidth = gameTrack.offsetWidth;
         const markSize = 36;
         const targetSize = 40;
-        const baseSpeed = 7.5; // Decreased by 50% from 15 to 7.5
+        const baseSpeed = 3;
+
+        function createPrecisionBar() {
+            const zones = [
+                { label: '0', width: '20%' },
+                { label: '1', width: '15%' },
+                { label: '2', width: '10%' },
+                { label: '3', width: '5%' },
+                { label: '3', width: '5%' },
+                { label: '2', width: '10%' },
+                { label: '1', width: '15%' },
+                { label: '0', width: '20%' }
+            ];
+            precisionBar.innerHTML = '';
+            let leftOffset = 0;
+            zones.forEach(zone => {
+                const div = document.createElement('div');
+                div.className = 'precision-zone';
+                div.style.left = `${leftOffset}%`;
+                div.style.width = zone.width;
+                div.textContent = zone.label;
+                precisionBar.appendChild(div);
+                leftOffset += parseFloat(zone.width);
+            });
+        }
 
         function updateMark() {
             if (isMoving) {
-                position += direction * (baseSpeed + (selectedAttack.difficulty - 1) * 1.5); // Adjusted difficulty scaling
+                const speed = baseSpeed * selectedAttack.damage;
+                position += direction * speed;
                 if (position <= 0 || position >= trackWidth - markSize) {
                     direction *= -1;
                 }
@@ -186,7 +222,11 @@
         }
 
         function randomizeTarget() {
-            targetPosition = Math.floor(Math.random() * (trackWidth - targetSize));
+            if (selectedAttack && selectedAttack.name === 'Tentacle') {
+                targetPosition = (trackWidth - targetSize) / 2;
+            } else {
+                targetPosition = Math.floor(Math.random() * (trackWidth - targetSize));
+            }
             target.style.left = `${targetPosition}px`;
         }
 
@@ -201,19 +241,39 @@
             startStopBtn.classList.add('attack');
             requestAnimationFrame(updateMark);
             disableAttackButtons(true);
+            precisionBar.style.display = selectedAttack.name === 'Tentacle' ? 'block' : 'none';
         }
 
         function stopGame() {
             isMoving = false;
-            const distance = Math.abs((position + markSize / 2) - (targetPosition + targetSize / 2));
-            if (distance < targetSize / 2) {
-                updateStatus(`Hit! ${selectedAttack.damage}`);
+            let result;
+            if (selectedAttack.name === 'Tentacle') {
+                const relativePosition = position / trackWidth;
+                result = getTentacleResult(relativePosition);
             } else {
-                updateStatus('Missed!');
+                const distance = Math.abs((position + markSize / 2) - (targetPosition + targetSize / 2));
+                if (distance < targetSize / 2) {
+                    result = `Hit! Damage: ${selectedAttack.damage}`;
+                } else {
+                    result = 'Missed!';
+                }
             }
+            updateStatus(result);
             startStopBtn.textContent = 'Start';
             startStopBtn.classList.remove('attack');
             disableAttackButtons(false);
+        }
+
+        function getTentacleResult(relativePosition) {
+            const zones = [0.2, 0.35, 0.45, 0.5, 0.55, 0.65, 0.8, 1];
+            const zoneLabels = ['0', '1', '2', '3', '3', '2', '1', '0'];
+            for (let i = 0; i < zones.length; i++) {
+                if (relativePosition <= zones[i]) {
+                    const dragSpaces = parseInt(zoneLabels[i]);
+                    return dragSpaces > 0 ? `Hit! Opponent dragged back ${dragSpaces} space${dragSpaces > 1 ? 's' : ''}` : 'Missed!';
+                }
+            }
+            return 'Missed!';
         }
 
         function resetGame() {
@@ -228,6 +288,7 @@
             startStopBtn.textContent = 'Start';
             startStopBtn.classList.remove('attack');
             disableAttackButtons(false);
+            precisionBar.style.display = 'none';
         }
 
         function updateStatus(status) {
@@ -280,10 +341,11 @@
             btn.addEventListener('click', () => {
                 selectedAttack = {
                     name: btn.dataset.attack,
-                    difficulty: parseInt(btn.dataset.difficulty),
-                    damage: btn.dataset.damage
+                    damage: parseInt(btn.dataset.damage),
+                    range: parseInt(btn.dataset.range)
                 };
                 updateAttackDisplay();
+                randomizeTarget();
                 updateStatus('Ready');
             });
         });
@@ -294,6 +356,7 @@
         });
 
         // Initialize the game
+        createPrecisionBar();
         resetGame();
     </script>
 </body>
