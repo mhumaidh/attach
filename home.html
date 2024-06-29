@@ -244,20 +244,21 @@
             precisionBar.style.display = selectedAttack.name === 'Tentacle' ? 'block' : 'none';
         }
 
-        function stopGame() {
+       function stopGame() {
             isMoving = false;
             let result;
+            const distance = Math.abs((position + markSize / 2) - (targetPosition + targetSize / 2));
+            const isOnTarget = distance < targetSize / 2;
+
             if (selectedAttack.name === 'Tentacle') {
                 const relativePosition = position / trackWidth;
                 result = getTentacleResult(relativePosition);
+            } else if (selectedAttack.name === 'Homing Crow') {
+                result = isOnTarget ? 'Missed!' : `Hit! Damage: ${selectedAttack.damage}`;
             } else {
-                const distance = Math.abs((position + markSize / 2) - (targetPosition + targetSize / 2));
-                if (distance < targetSize / 2) {
-                    result = `Hit! Damage: ${selectedAttack.damage}`;
-                } else {
-                    result = 'Missed!';
-                }
+                result = isOnTarget ? `Hit! Damage: ${selectedAttack.damage}` : 'Missed!';
             }
+            
             updateStatus(result);
             startStopBtn.textContent = 'Start';
             startStopBtn.classList.remove('attack');
@@ -274,7 +275,6 @@
                 }
             }
             return 'Missed!';
-        }
 
         function resetGame() {
             isMoving = false;
