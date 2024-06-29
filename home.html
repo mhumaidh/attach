@@ -59,6 +59,9 @@
             padding: 10px 15px;
             font-size: 16px;
             cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
         }
         #start-stop-btn {
             font-size: 24px;
@@ -67,6 +70,24 @@
             display: block;
             width: 80%;
             max-width: 300px;
+            background-color: #4CAF50;
+            color: white;
+        }
+        #start-stop-btn:hover {
+            background-color: #45a049;
+        }
+        #start-stop-btn.attack {
+            background-color: #f44336;
+        }
+        #start-stop-btn.attack:hover {
+            background-color: #da190b;
+        }
+        #reset-btn {
+            background-color: #008CBA;
+            color: white;
+        }
+        #reset-btn:hover {
+            background-color: #007399;
         }
         #attack-buttons {
             display: flex;
@@ -79,6 +100,15 @@
             height: auto;
             padding: 10px;
             margin: 5px;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        #attack-buttons button:hover {
+            background-color: #e0e0e0;
+        }
+        #attack-buttons button.selected {
+            background-color: #dff0d8;
+            border: 2px solid #3c763d;
         }
         #status {
             font-size: 18px;
@@ -90,6 +120,10 @@
         .disabled {
             opacity: 0.5;
             cursor: not-allowed;
+        }
+        .weapon-symbol {
+            font-size: 24px;
+            margin-right: 5px;
         }
         @media (max-width: 600px) {
             #game-container {
@@ -106,10 +140,10 @@
     <div id="game-container">
         <h1>Select Weapon</h1>
         <div id="attack-buttons">
-            <button class="attack-btn" data-attack="Water Cannon" data-difficulty="3" data-damage="5 Lives Lost!">Water Cannon</button>
-            <button class="attack-btn" data-attack="Water Pistol" data-difficulty="4" data-damage="2 Lives Lost">Water Pistol</button>
-            <button class="attack-btn" data-attack="Laser" data-difficulty="5" data-damage="3 Lives Lost">Laser</button>
-            <button class="attack-btn" data-attack="Tentacle" data-difficulty="6" data-damage="Move 1 Position!">Tentacle</button>
+            <button class="attack-btn" data-attack="Water Cannon" data-difficulty="3" data-damage="5 Lives"><span class="weapon-symbol">💦</span>Water Cannon</button>
+            <button class="attack-btn" data-attack="Water Pistol" data-difficulty="4" data-damage="2 Lives"><span class="weapon-symbol">🔫</span>Water Pistol</button>
+            <button class="attack-btn" data-attack="Laser" data-difficulty="5" data-damage="3 Lives"><span class="weapon-symbol">🔆</span>Laser</button>
+            <button class="attack-btn" data-attack="Tentacle" data-difficulty="6" data-damage="Move 1 Position"><span class="weapon-symbol">🦑</span>Tentacle</button>
         </div>
         <div id="game-track">
             <div id="moving-mark"></div>
@@ -164,6 +198,7 @@
             isMoving = true;
             updateStatus('Moving');
             startStopBtn.textContent = 'Attack';
+            startStopBtn.classList.add('attack');
             requestAnimationFrame(updateMark);
             disableAttackButtons(true);
         }
@@ -177,6 +212,7 @@
                 updateStatus('Missed!');
             }
             startStopBtn.textContent = 'Start';
+            startStopBtn.classList.remove('attack');
             disableAttackButtons(false);
         }
 
@@ -190,6 +226,7 @@
             updateAttackDisplay();
             updateStatus('Select Weapon');
             startStopBtn.textContent = 'Start';
+            startStopBtn.classList.remove('attack');
             disableAttackButtons(false);
         }
 
@@ -215,9 +252,9 @@
         function updateAttackDisplay() {
             attackBtns.forEach(btn => {
                 if (btn.dataset.attack === (selectedAttack ? selectedAttack.name : null)) {
-                    btn.style.backgroundColor = 'lightblue';
+                    btn.classList.add('selected');
                 } else {
-                    btn.style.backgroundColor = '';
+                    btn.classList.remove('selected');
                 }
             });
         }
