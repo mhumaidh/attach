@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attack!</title>
+    <title>Select Weapon</title>
     <style>
         body, html {
             font-family: Arial, sans-serif;
@@ -68,16 +68,16 @@
             width: 80%;
             max-width: 300px;
         }
-        #difficulty-buttons {
+        #attack-buttons {
             display: flex;
             justify-content: center;
             flex-wrap: wrap;
             margin-top: 10px;
         }
-        #difficulty-buttons button {
-            width: 40px;
-            height: 40px;
-            padding: 0;
+        #attack-buttons button {
+            width: auto;
+            height: auto;
+            padding: 10px;
             margin: 5px;
         }
         #status {
@@ -104,15 +104,12 @@
 </head>
 <body>
     <div id="game-container">
-        <h1>Attack!</h1>
-        <div id="difficulty-buttons">
-            <p>Difficulty Level:</p>
-            <button class="diff-btn" data-level="1">1</button>
-            <button class="diff-btn" data-level="2">2</button>
-            <button class="diff-btn" data-level="3">3</button>
-            <button class="diff-btn" data-level="4">4</button>
-            <button class="diff-btn" data-level="5">5</button>
-            <button class="diff-btn" data-level="6">6</button>
+        <h1>Select Weapon</h1>
+        <div id="attack-buttons">
+            <button class="attack-btn" data-attack="Water Cannon" data-difficulty="3" data-damage="5 Lives Lost!">Water Cannon</button>
+            <button class="attack-btn" data-attack="Water Pistol" data-difficulty="4" data-damage="2 Lives Lost">Water Pistol</button>
+            <button class="attack-btn" data-attack="Laser" data-difficulty="5" data-damage="3 Lives Lost">Laser</button>
+            <button class="attack-btn" data-attack="Tentacle" data-difficulty="6" data-damage="Move 1 Position!">Tentacle</button>
         </div>
         <div id="game-track">
             <div id="moving-mark"></div>
@@ -120,7 +117,7 @@
         </div>
         <button id="start-stop-btn">Start</button>
         <button id="reset-btn">Reset</button>
-        <div id="status">Select Difficulty</div>
+        <div id="status">Select Weapon</div>
     </div>
 
     <script>
@@ -128,23 +125,23 @@
         const target = document.getElementById('target');
         const startStopBtn = document.getElementById('start-stop-btn');
         const resetBtn = document.getElementById('reset-btn');
-        const difficultyBtns = document.querySelectorAll('.diff-btn');
+        const attackBtns = document.querySelectorAll('.attack-btn');
         const statusDisplay = document.getElementById('status');
         const gameTrack = document.getElementById('game-track');
 
         let position = 0;
         let direction = 1;
         let isMoving = false;
-        let difficulty = null;
+        let selectedAttack = null;
         let targetPosition = 0;
         let trackWidth = gameTrack.offsetWidth;
         const markSize = 36;
         const targetSize = 40;
-        const baseSpeed = 10; // Increased from 5 to 10
+        const baseSpeed = 15;
 
         function updateMark() {
             if (isMoving) {
-                position += direction * (baseSpeed + (difficulty - 1) * 3); // Increased scaling factor
+                position += direction * (baseSpeed + (selectedAttack.difficulty - 1) * 3);
                 if (position <= 0 || position >= trackWidth - markSize) {
                     direction *= -1;
                 }
@@ -160,64 +157,64 @@
         }
 
         function startGame() {
-            if (difficulty === null) {
-                updateStatus('Select Difficulty');
+            if (!selectedAttack) {
+                updateStatus('Select Weapon');
                 return;
             }
             isMoving = true;
-            updateStatus('Running');
-            startStopBtn.textContent = 'Stop';
+            updateStatus('Moving');
+            startStopBtn.textContent = 'Attack';
             requestAnimationFrame(updateMark);
-            disableDifficultyButtons(true);
+            disableAttackButtons(true);
         }
 
         function stopGame() {
             isMoving = false;
             const distance = Math.abs((position + markSize / 2) - (targetPosition + targetSize / 2));
             if (distance < targetSize / 2) {
-                updateStatus('Successful');
+                updateStatus(`Hit! ${selectedAttack.damage}`);
             } else {
-                updateStatus('Unsuccessful');
+                updateStatus('Missed!');
             }
             startStopBtn.textContent = 'Start';
-            disableDifficultyButtons(false);
+            disableAttackButtons(false);
         }
 
         function resetGame() {
             isMoving = false;
-            difficulty = null;
+            selectedAttack = null;
             position = 0;
             direction = 1;
             movingMark.style.left = '0px';
             randomizeTarget();
-            updateDifficultyDisplay();
-            updateStatus('Select Difficulty');
+            updateAttackDisplay();
+            updateStatus('Select Weapon');
             startStopBtn.textContent = 'Start';
-            disableDifficultyButtons(false);
+            disableAttackButtons(false);
         }
 
         function updateStatus(status) {
             statusDisplay.textContent = status;
             switch(status) {
-                case 'Select Difficulty':
-                case 'Running':
+                case 'Select Weapon':
+                case 'Moving':
                     statusDisplay.style.backgroundColor = '#f0f0f0';
                     statusDisplay.style.color = 'black';
                     break;
-                case 'Successful':
+                case status.startsWith('Hit'):
                     statusDisplay.style.backgroundColor = '#d4edda';
                     statusDisplay.style.color = '#155724';
                     break;
-                case 'Unsuccessful':
+                case 'Missed!':
                     statusDisplay.style.backgroundColor = '#f8d7da';
                     statusDisplay.style.color = '#721c24';
                     break;
             }
         }
 
-        function updateDifficultyDisplay() {
-            difficultyBtns.forEach(btn => {
-                if (parseInt(btn.dataset.level) === difficulty) {
+        function updateAttackDisplay() {
+            attackBtns.forEach(btn => {
+                if (btn.dataset.attack === (selectedAttack ? selectedAttack.name : null)) {
                     btn.style.backgroundColor = 'lightblue';
                 } else {
                     btn.style.backgroundColor = '';
@@ -225,8 +222,8 @@
             });
         }
 
-        function disableDifficultyButtons(disable) {
-            difficultyBtns.forEach(btn => {
+        function disableAttackButtons(disable) {
+            attackBtns.forEach(btn => {
                 btn.disabled = disable;
                 btn.classList.toggle('disabled', disable);
             });
@@ -242,10 +239,14 @@
 
         resetBtn.addEventListener('click', resetGame);
 
-        difficultyBtns.forEach(btn => {
+        attackBtns.forEach(btn => {
             btn.addEventListener('click', () => {
-                difficulty = parseInt(btn.dataset.level);
-                updateDifficultyDisplay();
+                selectedAttack = {
+                    name: btn.dataset.attack,
+                    difficulty: parseInt(btn.dataset.difficulty),
+                    damage: btn.dataset.damage
+                };
+                updateAttackDisplay();
                 updateStatus('Ready');
             });
         });
