@@ -244,7 +244,7 @@
             precisionBar.style.display = selectedAttack.name === 'Tentacle' ? 'block' : 'none';
         }
 
-       function stopGame() {
+        function stopGame() {
             isMoving = false;
             let result;
             const distance = Math.abs((position + markSize / 2) - (targetPosition + targetSize / 2));
@@ -275,6 +275,7 @@
                 }
             }
             return 'Missed!';
+        }
 
         function resetGame() {
             isMoving = false;
